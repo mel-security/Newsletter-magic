@@ -26,6 +26,8 @@ async def _run_pipeline(dry_run: bool = False) -> dict:
     from app.pipeline.render import render_newsletter, save_newsletter
     from app.pipeline.emailer import send_newsletter
     from app.pipeline.sanitizer import reload_blacklist
+    from app.pipeline.blacklist_viability import audit_blacklist, auto_fix_collisions
+    from app.pipeline.search_context import reload_profiles
 
     session = get_sync_session()
     stats = {}
@@ -36,10 +38,40 @@ async def _run_pipeline(dry_run: bool = False) -> dict:
         session.add(run)
         session.commit()
 
-        # 0. Reload sanitizer blacklist (pick up any config changes)
+        # 0a. Reload configs from disk
         reload_blacklist()
+        reload_profiles()
 
-        # 1. Ingest (RSS/JSON feeds + autonomous web searches)
+        # 0b. Blacklist viability pre-check — fix hard collisions
+        log.info("pipeline.step", step="blacklist_viability")
+        viability = audit_blacklist()
+        hard_count = len(viability.get("hard_collisions", []))
+        if hard_count > 0:
+            log.warning("pipeline.blacklist_collisions", hard=hard_count)
+            fix_result = auto_fix_collisions(dry_run=False)
+            stats["blacklist_viability"] = {
+                "hard_collisions_fixed": fix_result.get("fixed", 0),
+                "soft_collisions": len(viability.get("soft_collisions", [])),
+            }
+            reload_blacklist()
+        else:
+            stats["blacklist_viability"] = {
+                "hard_collisions_fixed": 0,
+                "soft_collisions": len(viability.get("soft_collisions", [])),
+                "entries_checked": viability.get("entries_checked", 0),
+            }
+
+        # 0c. Auto-update blacklist from AI injection research
+        if settings.blacklist_auto_update:
+            log.info("pipeline.step", step="blacklist_auto_update")
+            try:
+                from app.pipeline.blacklist_updater import auto_update_blacklist
+                stats["blacklist_update"] = await auto_update_blacklist(dry_run=False)
+            except Exception as exc:
+                log.warning("pipeline.blacklist_update_error", error=str(exc))
+                stats["blacklist_update"] = {"error": str(exc)}
+
+        # 1. Ingest (RSS/JSON feeds + autonomous web searches via profiles)
         log.info("pipeline.step", step="ingest")
         stats["ingest"] = await ingest_sources(session)
 

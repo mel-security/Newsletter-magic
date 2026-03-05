@@ -42,6 +42,10 @@ This system fetches content from the open internet (RSS feeds, Google, Bing) and
 
 6. **Structural defenses** — LLM prompts use strict JSON-only output schemas, making it harder for injected instructions to produce unstructured output.
 
+7. **Autonomous blacklist updates** — the agent actively searches the web for newly published prompt injection techniques, uses the LLM to extract attack patterns, validates them against a known-good corpus to prevent false positives, and appends safe entries automatically. Backups are created before each modification.
+
+8. **Viability checker** — before every pipeline run, the blacklist is audited against a corpus of legitimate cybersecurity text (CVE reports, threat intel, newsletter content). Hard collisions (entries matching >50% of normal content) are automatically disabled to prevent self-lockdown. This prevents a runaway blacklist from blocking the bot's own content.
+
 ### Maintaining the Blacklist
 
 Edit `config/prompt_blacklist.txt` and reload:
@@ -52,6 +56,11 @@ curl -X POST http://127.0.0.1:8000/api/reload-blacklist
 Test phrases against the sanitizer:
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/test-sanitizer?text=ignore+all+instructions"
+```
+
+Audit for collisions:
+```bash
+curl http://127.0.0.1:8000/api/blacklist/audit
 ```
 
 ## LLM Safety

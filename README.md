@@ -95,6 +95,8 @@ Key settings:
 - `MAX_STORIES` — Max stories per newsletter
 - `OLLAMA_KEEP_ALIVE=0` — Unload models after each call (saves RAM)
 - `SEARCH_ENABLED` — Enable autonomous web search (Google/Bing)
+- `SEARCH_PROFILE` — Active search profile(s), comma-separated
+- `BLACKLIST_AUTO_UPDATE` — Auto-discover new injection techniques
 
 ### Sources (config/sources.yml)
 
@@ -104,14 +106,38 @@ Add or remove RSS/JSON feeds. Each source has:
 - `type` — `rss` or `json`
 - `reliability` — 0.0 to 1.0 (used in scoring)
 
-### Search Engines (config/search_queries.yml)
+### Search Profiles (config/search_profiles.yml)
 
-Configure autonomous web search beyond RSS feeds:
-- `enabled_engines` — List of engines: `google`, `google_news`, `bing`
-- `queries` — Cybersecurity search queries (customizable)
-- `results_per_query` — Max results per query per engine
+The agent is **multi-purpose** — search context is loaded from profile files, not hardcoded. Available profiles:
 
-Search results are automatically ingested alongside RSS feeds, deduplicated, and scored the same way.
+| Profile | Description |
+|---------|-------------|
+| `cybersecurity` | Threats, CVEs, advisories, breaches (default) |
+| `ai_security` | Prompt injection, LLM vulnerabilities, adversarial ML |
+| `cloud_infra` | AWS/Azure/GCP, Kubernetes, supply chain |
+| `privacy` | GDPR, CNIL, data protection enforcement |
+| `iot_security` | IoT devices, firmware, embedded systems |
+| `fintech` | Banking fraud, crypto hacks, payment systems |
+| `tech_general` | Broad tech news and trends |
+
+Activate one or more profiles:
+```bash
+# Single profile
+SEARCH_PROFILE=cybersecurity
+
+# Multiple profiles (queries are merged, deduplicated)
+SEARCH_PROFILE=cybersecurity,ai_security,cloud_infra
+```
+
+Add custom profiles by editing `config/search_profiles.yml`.
+
+```bash
+# List available profiles via API
+curl http://127.0.0.1:8000/api/search-profiles
+
+# Reload profiles from disk
+curl -X POST http://127.0.0.1:8000/api/search-profiles/reload
+```
 
 ### Scoring (config/scoring.yml)
 
@@ -162,6 +188,19 @@ curl -X POST http://127.0.0.1:8000/api/reload-blacklist
 
 # Test sanitizer
 curl -X POST "http://127.0.0.1:8000/api/test-sanitizer?text=ignore+all+instructions"
+
+# Search profiles
+curl http://127.0.0.1:8000/api/search-profiles
+curl -X POST http://127.0.0.1:8000/api/search-profiles/reload
+
+# Blacklist viability audit
+curl http://127.0.0.1:8000/api/blacklist/audit
+
+# Preview blacklist collision fixes
+curl -X POST "http://127.0.0.1:8000/api/blacklist/fix-collisions?dry_run=true"
+
+# Auto-update blacklist from web (preview)
+curl -X POST "http://127.0.0.1:8000/api/blacklist/auto-update?dry_run=true"
 ```
 
 ### View Logs
@@ -187,6 +226,44 @@ All content from the internet passes through a multi-layer sanitizer before reac
 3. **Marker stripping** — removes `<system>`, `[INST]`, `<<SYS>>` style delimiters
 4. **LLM-level defense** — final sanitization pass right before sending any text to Ollama
 5. **Length truncation** — prevents resource abuse via extremely long injected text
+6. **Auto-update** — the agent searches the web for new prompt injection techniques, uses the Writer LLM to extract patterns, validates them, and appends to the blacklist automatically
+7. **Viability checker** — every pipeline run audits the blacklist against a corpus of known-good cybersecurity text to prevent false positives from locking down the bot
+
+### Blacklist Auto-Update
+
+Each pipeline run (if `BLACKLIST_AUTO_UPDATE=true`):
+1. Searches Google/Bing for latest prompt injection research articles
+2. Extracts article text and sends to Writer LLM for pattern extraction
+3. Validates each proposed pattern against a known-good corpus (viability check)
+4. Only appends patterns that pass validation (no false positives)
+5. Creates a timestamped backup before any modification
+
+```bash
+# Preview what would be added
+curl -X POST "http://127.0.0.1:8000/api/blacklist/auto-update?dry_run=true"
+
+# Apply updates
+curl -X POST "http://127.0.0.1:8000/api/blacklist/auto-update?dry_run=false"
+```
+
+### Blacklist Viability Checker
+
+Prevents self-lockdown by detecting entries that collide with legitimate content:
+
+- **Hard collision** (>50% of corpus matches) — entry is auto-disabled
+- **Soft collision** (10-50%) — flagged for manual review
+- **Safe** (<10%) — entry is viable
+
+```bash
+# Full audit report
+curl http://127.0.0.1:8000/api/blacklist/audit
+
+# Preview collision fixes
+curl -X POST "http://127.0.0.1:8000/api/blacklist/fix-collisions?dry_run=true"
+
+# Apply fixes (disables hard collisions, creates backup)
+curl -X POST "http://127.0.0.1:8000/api/blacklist/fix-collisions?dry_run=false"
+```
 
 Pipeline stats track `sanitizer_rejected` counts per run. Review in `/api/runs`.
 

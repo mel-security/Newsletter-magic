@@ -35,6 +35,10 @@ class Settings(BaseSettings):
 
     # Search engines
     search_enabled: bool = True
+    search_profile: str = "cybersecurity"  # Comma-separated profiles from search_profiles.yml
+
+    # Blacklist auto-updater
+    blacklist_auto_update: bool = True  # Search for new injection techniques each run
 
     # Database
     database_url: str = "postgresql+asyncpg://cyberagent:changeme_in_production@postgres:5432/cyberagent"

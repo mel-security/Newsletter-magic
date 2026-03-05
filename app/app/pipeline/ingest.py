@@ -27,12 +27,9 @@ def load_sources() -> list[dict]:
 
 
 def load_search_config() -> dict:
-    """Load search engine queries and settings."""
-    path = Path(settings.config_dir) / "search_queries.yml"
-    if not path.exists():
-        return {"enabled_engines": [], "queries": [], "results_per_query": 10}
-    with open(path) as f:
-        return yaml.safe_load(f) or {}
+    """Load merged search config from active profiles."""
+    from app.pipeline.search_context import get_merged_search_config
+    return get_merged_search_config()
 
 
 async def fetch_rss(url: str) -> list[dict]:

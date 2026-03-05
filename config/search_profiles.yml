@@ -1,0 +1,133 @@
+# ══════════════════════════════════════════════════════════
+# Search Context Profiles
+# ══════════════════════════════════════════════════════════
+#
+# The active profile is selected via SEARCH_PROFILE env var.
+# Each profile defines its own queries, engines, and sources,
+# making the agent multi-purpose.
+#
+# To add a new profile, create a new top-level key below.
+# ══════════════════════════════════════════════════════════
+
+# ── Default: Cybersecurity ───────────────────────────────
+cybersecurity:
+  description: "Cybersecurity threats, vulnerabilities, and advisories"
+  enabled_engines:
+    - google_news
+    - bing
+  results_per_query: 10
+  queries:
+    - "cybersecurity vulnerability exploit today"
+    - "ransomware attack news"
+    - "zero-day vulnerability CVE"
+    - "data breach notification"
+    - "APT threat actor campaign"
+    - "critical infrastructure cyber attack"
+    - "SCADA ICS vulnerability"
+    - "CISA advisory KEV"
+    - "Microsoft patch Tuesday security"
+    - "Linux kernel vulnerability"
+    - "malware analysis report"
+    - "phishing campaign"
+    - "botnet takedown"
+    - "dark web data leak"
+    - "cyberattaque France"
+    - "CERT-FR alerte sécurité"
+    - "ransomware entreprise française"
+    - "fuite données France"
+
+# ── AI / Machine Learning Security ───────────────────────
+ai_security:
+  description: "AI security, prompt injection, adversarial ML, LLM vulnerabilities"
+  enabled_engines:
+    - google_news
+    - bing
+    - google
+  results_per_query: 10
+  queries:
+    - "prompt injection attack LLM"
+    - "AI model jailbreak technique"
+    - "large language model vulnerability"
+    - "adversarial machine learning attack"
+    - "AI safety alignment bypass"
+    - "LLM security research"
+    - "chatbot manipulation technique"
+    - "indirect prompt injection"
+    - "AI red teaming results"
+    - "LLM guardrail bypass"
+
+# ── Cloud & Infrastructure ───────────────────────────────
+cloud_infra:
+  description: "Cloud security, container vulnerabilities, infrastructure attacks"
+  enabled_engines:
+    - google_news
+    - bing
+  results_per_query: 10
+  queries:
+    - "AWS Azure GCP security vulnerability"
+    - "cloud misconfiguration data breach"
+    - "Kubernetes container escape vulnerability"
+    - "Docker security vulnerability"
+    - "supply chain attack software"
+    - "CI/CD pipeline security breach"
+    - "terraform infrastructure vulnerability"
+    - "serverless function attack"
+
+# ── Privacy & Compliance ─────────────────────────────────
+privacy:
+  description: "Data privacy regulations, GDPR, compliance news"
+  enabled_engines:
+    - google_news
+  results_per_query: 8
+  queries:
+    - "GDPR fine data protection"
+    - "privacy regulation news"
+    - "data protection authority enforcement"
+    - "CNIL sanction"
+    - "personal data breach notification"
+    - "privacy by design regulation"
+    - "RGPD conformité entreprise"
+
+# ── IoT & Embedded Security ─────────────────────────────
+iot_security:
+  description: "IoT devices, embedded systems, firmware vulnerabilities"
+  enabled_engines:
+    - google_news
+    - bing
+  results_per_query: 8
+  queries:
+    - "IoT device vulnerability exploit"
+    - "smart home security breach"
+    - "firmware vulnerability disclosure"
+    - "embedded system attack"
+    - "medical device cybersecurity"
+    - "automotive cybersecurity vulnerability"
+
+# ── Financial / Fintech Security ─────────────────────────
+fintech:
+  description: "Financial sector cybersecurity, banking fraud, crypto threats"
+  enabled_engines:
+    - google_news
+    - bing
+  results_per_query: 8
+  queries:
+    - "bank cybersecurity breach"
+    - "financial fraud cyber attack"
+    - "cryptocurrency exchange hack"
+    - "payment system vulnerability"
+    - "SWIFT banking attack"
+    - "fintech security incident"
+
+# ── General Tech News ────────────────────────────────────
+tech_general:
+  description: "Broad technology news and trends (non-security focused)"
+  enabled_engines:
+    - google_news
+  results_per_query: 10
+  queries:
+    - "technology breakthrough news"
+    - "open source project release"
+    - "programming language update"
+    - "tech industry major announcement"
+    - "artificial intelligence development"
+    - "software engineering best practices"

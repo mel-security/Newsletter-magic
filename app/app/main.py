@@ -127,3 +127,68 @@ async def test_sanitizer(text: str):
         "cleaned_text": cleaned[:500] if cleaned else "",
         "report": report,
     }
+
+
+# ── Search profile management ────────────────────────────
+
+@app.get("/api/search-profiles")
+async def list_search_profiles():
+    """List all available search context profiles."""
+    from app.pipeline.search_context import list_profiles, get_active_profile_names
+
+    return {
+        "active": get_active_profile_names(),
+        "available": list_profiles(),
+    }
+
+
+@app.post("/api/search-profiles/reload")
+async def reload_search_profiles():
+    """Reload search profiles from disk."""
+    from app.pipeline.search_context import reload_profiles, list_profiles
+
+    reload_profiles()
+    return {"status": "reloaded", "profiles": list_profiles()}
+
+
+# ── Blacklist viability & auto-update ─────────────────────
+
+@app.get("/api/blacklist/audit")
+async def audit_blacklist_endpoint():
+    """Run a viability audit on the current blacklist.
+
+    Tests every blacklist entry against a corpus of known-good
+    cybersecurity text. Reports hard collisions (would block
+    legitimate content) and soft collisions (borderline).
+    """
+    from app.pipeline.blacklist_viability import audit_blacklist
+
+    return audit_blacklist()
+
+
+@app.post("/api/blacklist/fix-collisions")
+async def fix_collisions(dry_run: bool = True):
+    """Auto-fix hard collisions in the blacklist.
+
+    Use dry_run=true (default) to preview which entries would be disabled.
+    Use dry_run=false to apply fixes (creates backup first).
+    """
+    from app.pipeline.blacklist_viability import auto_fix_collisions
+
+    return auto_fix_collisions(dry_run=dry_run)
+
+
+@app.post("/api/blacklist/auto-update")
+async def trigger_blacklist_update(dry_run: bool = True):
+    """Trigger blacklist auto-update from AI injection research.
+
+    Searches the web for new prompt injection techniques,
+    extracts patterns via LLM, validates against known-good corpus,
+    and appends safe entries to the blacklist.
+
+    Use dry_run=true (default) to preview proposed entries.
+    Use dry_run=false to apply updates (creates backup first).
+    """
+    from app.pipeline.blacklist_updater import auto_update_blacklist
+
+    return await auto_update_blacklist(dry_run=dry_run)
