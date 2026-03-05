@@ -1,4 +1,9 @@
-"""Ollama HTTP client with memory-safe keep_alive management."""
+"""Ollama HTTP client with memory-safe keep_alive management.
+
+All prompts pass through the sanitizer before being sent to the LLM.
+This is the LAST line of defense against prompt injection from
+internet-sourced content that may be embedded in context packs.
+"""
 from __future__ import annotations
 
 import json
@@ -6,6 +11,7 @@ import re
 
 import httpx
 
+from app.pipeline.sanitizer import sanitize_for_llm
 from app.settings import settings
 from app.utils.logging import get_logger
 
@@ -43,6 +49,9 @@ async def chat(
     Uses keep_alive=0 (or configured value) to unload the model
     immediately after the call, preserving RAM for the next model.
     """
+    # ── Sanitize user prompt (contains internet-sourced data) ──
+    prompt = sanitize_for_llm(prompt, context_label=f"ollama/{model}")
+
     messages = []
     if system:
         messages.append({"role": "system", "content": system})

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     max_stories: int = 25
     lang: str = "fr"
 
+    # Search engines
+    search_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://cyberagent:changeme_in_production@postgres:5432/cyberagent"
     database_url_sync: str = "postgresql://cyberagent:changeme_in_production@postgres:5432/cyberagent"

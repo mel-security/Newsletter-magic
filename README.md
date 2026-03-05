@@ -5,25 +5,34 @@ Autonomous cybersecurity newsletter agent powered by local LLMs using the **Devi
 ## Architecture
 
 ```
-┌─────────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│  RSS/JSON   │──▸│  Ingest  │──▸│ Normalize│──▸│  Dedup   │
-│  Sources    │   │          │   │ (trafilat)│   │ (simhash)│
-└─────────────┘   └──────────┘   └──────────┘   └────┬─────┘
-                                                      │
-    ┌──────────┐   ┌──────────┐   ┌──────────┐       ▼
-    │  Email   │◂──│  Render  │◂──│Newsletter│◂──┌──────────┐
-    │(SMTP/MH) │   │ (Jinja2) │   │Devil Twin│   │ Extract  │
-    └──────────┘   └──────────┘   └────┬─────┘   │ IOC/CVE  │
-                                       │         └────┬─────┘
-                              ┌────────┴───────┐      ▼
-                              │    Ollama       │ ┌──────────┐
-                              │ Writer + Critic │ │  Score   │
-                              └────────────────┘ └────┬─────┘
-                                                      ▼
-                                                 ┌──────────┐
-                                                 │ Cluster  │
-                                                 │→ Stories │
-                                                 └──────────┘
+┌─────────────┐
+│  RSS/JSON   │──┐
+│  Sources    │  │   ┌──────────┐   ┌──────────┐   ┌──────────┐
+├─────────────┤  ├──▸│  Ingest  │──▸│ Sanitize │──▸│  Dedup   │
+│Google Search│  │   │ +Search  │   │+Normalize│   │ (simhash)│
+│Google News  │──┘   └──────────┘   └──────────┘   └────┬─────┘
+│Bing Search  │           │                              │
+└─────────────┘           ▼                              ▼
+              ┌──────────────────┐              ┌──────────────┐
+              │  Prompt Inject.  │              │   Extract    │
+              │  Blacklist       │              │   IOC/CVE    │
+              │  Sanitizer       │              └──────┬───────┘
+              └──────────────────┘                     ▼
+                                                ┌──────────┐
+    ┌──────────┐   ┌──────────┐                 │  Score   │
+    │  Email   │◂──│  Render  │                 └────┬─────┘
+    │(SMTP/MH) │   │ (Jinja2) │                      ▼
+    └──────────┘   └────┬─────┘                 ┌──────────┐
+                        │                       │ Cluster  │
+                   ┌────┴─────┐                 │→ Stories │
+                   │Newsletter│◂────────────────└──────────┘
+                   │Devil Twin│
+                   └────┬─────┘
+                        │
+               ┌────────┴───────┐
+               │    Ollama       │
+               │ Writer + Critic │
+               └────────────────┘
 ```
 
 ## Requirements
@@ -43,6 +52,9 @@ cd /opt/cyber-news-agent
 
 # Run the installer (as root)
 sudo ./install.sh
+
+# Harden the VM (recommended)
+sudo ./hardening/harden.sh
 ```
 
 That's it. The installer will:
@@ -82,6 +94,7 @@ Key settings:
 - `LANG` — Newsletter language (fr/en)
 - `MAX_STORIES` — Max stories per newsletter
 - `OLLAMA_KEEP_ALIVE=0` — Unload models after each call (saves RAM)
+- `SEARCH_ENABLED` — Enable autonomous web search (Google/Bing)
 
 ### Sources (config/sources.yml)
 
@@ -91,9 +104,30 @@ Add or remove RSS/JSON feeds. Each source has:
 - `type` — `rss` or `json`
 - `reliability` — 0.0 to 1.0 (used in scoring)
 
+### Search Engines (config/search_queries.yml)
+
+Configure autonomous web search beyond RSS feeds:
+- `enabled_engines` — List of engines: `google`, `google_news`, `bing`
+- `queries` — Cybersecurity search queries (customizable)
+- `results_per_query` — Max results per query per engine
+
+Search results are automatically ingested alongside RSS feeds, deduplicated, and scored the same way.
+
 ### Scoring (config/scoring.yml)
 
 Configure weights for article prioritization: recency, source reliability, keyword matches, CVE/IOC presence, exploit hints.
+
+### Prompt Injection Blacklist (config/prompt_blacklist.txt)
+
+The sanitizer uses this file to detect and block prompt injection attempts in fetched content. Supports:
+- Plain text phrases (case-insensitive substring match)
+- Regex patterns (lines starting with `regex:`)
+- Comments (lines starting with `#`)
+
+Hot-reload without restart:
+```bash
+curl -X POST http://127.0.0.1:8000/api/reload-blacklist
+```
 
 ## Usage
 
@@ -122,6 +156,12 @@ curl http://127.0.0.1:8000/api/runs
 
 # List top stories
 curl http://127.0.0.1:8000/api/stories
+
+# Reload prompt injection blacklist
+curl -X POST http://127.0.0.1:8000/api/reload-blacklist
+
+# Test sanitizer
+curl -X POST "http://127.0.0.1:8000/api/test-sanitizer?text=ignore+all+instructions"
 ```
 
 ### View Logs
@@ -138,6 +178,24 @@ docker compose logs -f ollama      # LLM inference
 - `out/latest.html` — Rendered HTML newsletter
 - `out/latest.json` — Structured JSON output
 
+## Prompt Injection Defense
+
+All content from the internet passes through a multi-layer sanitizer before reaching the DB or any LLM:
+
+1. **Blacklist matching** (`config/prompt_blacklist.txt`) — blocks known injection phrases
+2. **Built-in pattern detection** — 20+ regex patterns catch instruction overrides, role hijacking, delimiter injection, encoding tricks
+3. **Marker stripping** — removes `<system>`, `[INST]`, `<<SYS>>` style delimiters
+4. **LLM-level defense** — final sanitization pass right before sending any text to Ollama
+5. **Length truncation** — prevents resource abuse via extremely long injected text
+
+Pipeline stats track `sanitizer_rejected` counts per run. Review in `/api/runs`.
+
+To test the sanitizer:
+```bash
+curl -X POST "http://127.0.0.1:8000/api/test-sanitizer?text=ignore+all+previous+instructions"
+# Returns: {"cleaned_text": "", "report": {"action": "rejected", ...}}
+```
+
 ## Devil Twins Pipeline
 
 The newsletter generation uses two competing LLMs:
@@ -152,6 +210,18 @@ The newsletter generation uses two competing LLMs:
 5. If FAIL → **safe fallback digest** (links only, no AI claims)
 
 Memory management: `OLLAMA_KEEP_ALIVE=0` ensures each model is unloaded immediately after use, so both models can share 16GB RAM.
+
+## Ubuntu Hardening
+
+The `hardening/` folder contains production hardening scripts for the VM:
+
+```bash
+sudo ./hardening/harden.sh    # Full hardening (SSH, firewall, kernel, fail2ban, audit)
+sudo ./hardening/audit.sh     # Security posture audit
+sudo ./hardening/firewall.sh  # UFW firewall only
+```
+
+See `hardening/README.md` for details on what each script does.
 
 ## GPU Support
 
@@ -209,6 +279,12 @@ docker compose exec postgres psql -U cyberagent
 
 # Re-run migrations
 docker compose exec api alembic -c /opt/app/alembic.ini upgrade head
+```
+
+### Sanitizer too aggressive
+Edit `config/prompt_blacklist.txt` to remove false-positive entries, then:
+```bash
+curl -X POST http://127.0.0.1:8000/api/reload-blacklist
 ```
 
 ### Out of memory

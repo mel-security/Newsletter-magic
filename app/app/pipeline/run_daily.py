@@ -25,6 +25,7 @@ async def _run_pipeline(dry_run: bool = False) -> dict:
     from app.pipeline.newsletter import generate_newsletter
     from app.pipeline.render import render_newsletter, save_newsletter
     from app.pipeline.emailer import send_newsletter
+    from app.pipeline.sanitizer import reload_blacklist
 
     session = get_sync_session()
     stats = {}
@@ -35,11 +36,14 @@ async def _run_pipeline(dry_run: bool = False) -> dict:
         session.add(run)
         session.commit()
 
-        # 1. Ingest
+        # 0. Reload sanitizer blacklist (pick up any config changes)
+        reload_blacklist()
+
+        # 1. Ingest (RSS/JSON feeds + autonomous web searches)
         log.info("pipeline.step", step="ingest")
         stats["ingest"] = await ingest_sources(session)
 
-        # 2. Normalize
+        # 2. Normalize (includes content sanitization)
         log.info("pipeline.step", step="normalize")
         stats["normalize"] = await normalize_raw_items(session)
 

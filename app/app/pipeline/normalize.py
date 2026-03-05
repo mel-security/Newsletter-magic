@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import Article, RawItem
+from app.pipeline.sanitizer import sanitize_text
 from app.settings import settings
 from app.utils.http import http_client
 from app.utils.logging import get_logger
@@ -44,7 +45,7 @@ def detect_language(text: str) -> str:
 
 async def normalize_raw_items(session: Session) -> dict:
     """Process raw items into articles with full text."""
-    stats = {"processed": 0, "articles_created": 0, "skipped": 0, "errors": 0}
+    stats = {"processed": 0, "articles_created": 0, "skipped": 0, "errors": 0, "sanitizer_rejected": 0}
 
     raw_items = session.execute(
         select(RawItem).where(RawItem.status == "new")
@@ -72,6 +73,16 @@ async def normalize_raw_items(session: Session) -> dict:
             if not full_text:
                 raw.status = "no_content"
                 stats["skipped"] += 1
+                continue
+
+            # ── Sanitize extracted text (prompt injection defense) ──
+            full_text, san_report = sanitize_text(
+                full_text, source=raw.url, strict=False
+            )
+            if san_report["action"] == "rejected":
+                raw.status = "sanitizer_rejected"
+                stats["sanitizer_rejected"] += 1
+                log.warning("normalize.sanitizer_rejected", url=raw.url)
                 continue
 
             lang = detect_language(full_text)

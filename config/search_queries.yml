@@ -1,0 +1,42 @@
+# ── Search queries for autonomous web search engines ──────
+# These queries are used by Google Search, Google News, and Bing
+# to discover cybersecurity news beyond RSS feeds.
+
+# Engines to enable: google, google_news, bing
+enabled_engines:
+  - google_news
+  - bing
+
+# Max results per query per engine
+results_per_query: 10
+
+# Search queries — customize for your focus areas
+queries:
+  # General cyber threats
+  - "cybersecurity vulnerability exploit today"
+  - "ransomware attack news"
+  - "zero-day vulnerability CVE"
+  - "data breach notification"
+  - "APT threat actor campaign"
+
+  # Critical infrastructure
+  - "critical infrastructure cyber attack"
+  - "SCADA ICS vulnerability"
+  - "power grid cyber threat"
+
+  # Advisories & patches
+  - "CISA advisory KEV"
+  - "Microsoft patch Tuesday security"
+  - "Linux kernel vulnerability"
+
+  # Threat intelligence
+  - "malware analysis report"
+  - "phishing campaign 2025"
+  - "botnet takedown"
+  - "dark web data leak"
+
+  # Regional (French)
+  - "cyberattaque France"
+  - "CERT-FR alerte sécurité"
+  - "ransomware entreprise française"
+  - "fuite données France"

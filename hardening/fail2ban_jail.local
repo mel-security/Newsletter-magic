@@ -1,0 +1,57 @@
+# ══════════════════════════════════════════════════════════
+# Fail2ban Configuration — /etc/fail2ban/jail.local
+# ══════════════════════════════════════════════════════════
+
+[DEFAULT]
+# Ban for 1 hour, after 5 failures in 10 minutes
+bantime  = 3600
+findtime = 600
+maxretry = 5
+
+# Use systemd backend for Ubuntu 24.04
+backend = systemd
+
+# Email notifications (optional, uncomment and configure)
+# destemail = admin@local.dev
+# sender = fail2ban@local.dev
+# action = %(action_mwl)s
+
+# ── SSH Protection ───────────────────────────────────────
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+maxretry = 3
+bantime  = 7200
+findtime = 600
+
+# Aggressive mode — catches more SSH attack patterns
+mode     = aggressive
+
+# ── SSH DDoS ─────────────────────────────────────────────
+[sshd-ddos]
+enabled  = true
+port     = ssh
+filter   = sshd-ddos
+maxretry = 10
+bantime  = 3600
+findtime = 60
+
+# ── HTTP Auth failures (if API is exposed) ───────────────
+# Currently API is localhost-only, but ready if exposure changes.
+[cyber-agent-api]
+enabled  = false
+port     = 8000
+filter   = cyber-agent-api
+logpath  = /var/log/syslog
+maxretry = 10
+bantime  = 3600
+findtime = 300
+
+# ── Recidive — long ban for repeat offenders ─────────────
+[recidive]
+enabled  = true
+filter   = recidive
+bantime  = 86400
+findtime = 86400
+maxretry = 3

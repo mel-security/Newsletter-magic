@@ -106,3 +106,24 @@ async def list_stories(
         }
         for s in stories
     ]
+
+
+@app.post("/api/reload-blacklist")
+async def reload_blacklist():
+    """Reload the prompt injection blacklist from disk (hot reload)."""
+    from app.pipeline.sanitizer import reload_blacklist as _reload
+
+    _reload()
+    return {"status": "reloaded"}
+
+
+@app.post("/api/test-sanitizer")
+async def test_sanitizer(text: str):
+    """Test the sanitizer against a text sample (for debugging)."""
+    from app.pipeline.sanitizer import sanitize_text
+
+    cleaned, report = sanitize_text(text, source="api_test", strict=True)
+    return {
+        "cleaned_text": cleaned[:500] if cleaned else "",
+        "report": report,
+    }
