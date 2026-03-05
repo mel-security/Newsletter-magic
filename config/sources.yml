@@ -1,0 +1,62 @@
+# ── RSS / JSON feed sources for cyber-news-agent ──────────
+# Each source has: name, url, type (rss|json), reliability (0.0-1.0), lang
+sources:
+  - name: CERT-FR Alertes
+    url: https://www.cert.ssi.gouv.fr/alerte/feed/
+    type: rss
+    reliability: 0.95
+    lang: fr
+
+  - name: CERT-FR Avis
+    url: https://www.cert.ssi.gouv.fr/avis/feed/
+    type: rss
+    reliability: 0.95
+    lang: fr
+
+  - name: BleepingComputer
+    url: https://www.bleepingcomputer.com/feed/
+    type: rss
+    reliability: 0.80
+    lang: en
+
+  - name: The Hacker News
+    url: https://feeds.feedburner.com/TheHackersNews
+    type: rss
+    reliability: 0.85
+    lang: en
+
+  - name: Krebs on Security
+    url: https://krebsonsecurity.com/feed/
+    type: rss
+    reliability: 0.90
+    lang: en
+
+  - name: Dark Reading
+    url: https://www.darkreading.com/rss.xml
+    type: rss
+    reliability: 0.80
+    lang: en
+
+  - name: CISA Advisories
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    type: rss
+    reliability: 0.95
+    lang: en
+
+  - name: Schneier on Security
+    url: https://www.schneier.com/feed/
+    type: rss
+    reliability: 0.90
+    lang: en
+
+  - name: SecurityWeek
+    url: https://www.securityweek.com/feed/
+    type: rss
+    reliability: 0.80
+    lang: en
+
+  - name: Threatpost (archived)
+    url: https://threatpost.com/feed/
+    type: rss
+    reliability: 0.70
+    lang: en

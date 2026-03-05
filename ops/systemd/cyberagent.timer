@@ -1,0 +1,9 @@
+[Unit]
+Description=Cyber News Agent daily trigger (alternative to Celery Beat)
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

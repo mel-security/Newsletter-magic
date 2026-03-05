@@ -1,0 +1,38 @@
+# ── Scoring weights for article/story prioritization ──────
+# Final score = sum(weight * factor_value) normalized to 0-100
+
+weights:
+  recency:
+    weight: 2.0
+    decay_hours: 72        # articles older than this get reduced score
+    max_age_hours: 168     # articles older than this get score=0 for recency
+
+  source_reliability:
+    weight: 3.0            # multiplied by source reliability (0.0-1.0)
+
+  keyword_match:
+    weight: 2.5            # from keywords.yml matches
+
+  kev_presence:
+    weight: 4.0            # article mentions known exploited vulns
+
+  exploit_hint:
+    weight: 3.5            # mentions PoC, exploit code, weaponized
+
+  cve_count:
+    weight: 1.5            # number of CVEs mentioned (capped at 5)
+    cap: 5
+
+  ioc_count:
+    weight: 1.0            # number of IOCs extracted (capped at 10)
+    cap: 10
+
+  ransomware_leak:
+    weight: 3.0            # ransomware or data leak keywords
+
+# ── Severity thresholds ──────────────────────────────────
+severity:
+  critical: 80
+  high: 60
+  medium: 40
+  low: 0

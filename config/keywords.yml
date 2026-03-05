@@ -1,0 +1,70 @@
+# ── Keywords and patterns for scoring & filtering ─────────
+# Higher weight = more important
+
+critical_keywords:
+  weight: 5.0
+  terms:
+    - zero-day
+    - 0day
+    - actively exploited
+    - exploitation in the wild
+    - ransomware
+    - supply chain attack
+    - data breach
+    - APT
+    - nation-state
+    - critical vulnerability
+    - CVSS 9
+    - CVSS 10
+    - RCE
+    - remote code execution
+
+high_keywords:
+  weight: 3.0
+  terms:
+    - CVE-
+    - privilege escalation
+    - authentication bypass
+    - SQL injection
+    - phishing campaign
+    - malware
+    - botnet
+    - DDoS
+    - credential stuffing
+    - lateral movement
+    - command and control
+    - C2
+    - backdoor
+    - rootkit
+
+medium_keywords:
+  weight: 1.5
+  terms:
+    - patch tuesday
+    - security update
+    - vulnerability disclosure
+    - threat intelligence
+    - IOC
+    - indicator of compromise
+    - MITRE ATT&CK
+    - threat actor
+    - exploit kit
+
+kev_keywords:
+  weight: 4.0
+  terms:
+    - known exploited vulnerability
+    - KEV
+    - CISA KEV
+    - mandatory patch
+    - binding operational directive
+
+leak_keywords:
+  weight: 3.5
+  terms:
+    - data leak
+    - data dump
+    - leaked credentials
+    - dark web
+    - underground forum
+    - paste site

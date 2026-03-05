@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="{{ newsletter.lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ newsletter.title }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #161b22, #1a2332);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #58a6ff;
+      margin: 0 0 8px 0;
+      font-size: 24px;
+    }
+    .header .date {
+      color: #8b949e;
+      font-size: 14px;
+    }
+    .intro {
+      color: #8b949e;
+      font-size: 15px;
+      padding: 0 4px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .section {
+      margin-bottom: 28px;
+    }
+    .section-title {
+      color: #58a6ff;
+      font-size: 18px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .story {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .story-headline {
+      color: #f0f6fc;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+    .severity {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .severity-critical { background-color: #da3633; color: #fff; }
+    .severity-high { background-color: #d29922; color: #fff; }
+    .severity-medium { background-color: #388bfd; color: #fff; }
+    .severity-low { background-color: #3fb950; color: #fff; }
+    .story-summary {
+      color: #c9d1d9;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .cves {
+      margin: 8px 0;
+    }
+    .cve-tag {
+      display: inline-block;
+      background-color: #1f2937;
+      border: 1px solid #374151;
+      color: #f87171;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .recommendations {
+      color: #3fb950;
+      font-size: 13px;
+      font-style: italic;
+      margin-top: 8px;
+    }
+    .sources {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .sources a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .sources a:hover {
+      text-decoration: underline;
+    }
+    .ioc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .ioc-table th {
+      background-color: #161b22;
+      color: #58a6ff;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 2px solid #30363d;
+    }
+    .ioc-table td {
+      padding: 6px 12px;
+      border-bottom: 1px solid #21262d;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+    .closing {
+      color: #8b949e;
+      font-size: 14px;
+      text-align: center;
+      padding: 20px;
+      border-top: 1px solid #21262d;
+      margin-top: 24px;
+    }
+    .footer {
+      text-align: center;
+      color: #484f58;
+      font-size: 11px;
+      padding: 16px;
+    }
+    .fallback-notice {
+      background-color: #1c1917;
+      border: 1px solid #854d0e;
+      border-radius: 6px;
+      padding: 12px;
+      color: #fbbf24;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>&#x1f6e1; {{ newsletter.title }}</h1>
+      <div class="date">{{ newsletter.date }}</div>
+    </div>
+
+    {% if is_fallback %}
+    <div class="fallback-notice">
+      &#9888; This edition was generated in safe digest mode. Items are listed with sources only, without additional analysis.
+    </div>
+    {% endif %}
+
+    <div class="intro">{{ newsletter.intro }}</div>
+
+    {% for section in newsletter.sections %}
+    <div class="section">
+      <h2 class="section-title">{{ section.section_title }}</h2>
+      {% for story in section.stories %}
+      <div class="story">
+        <span class="severity severity-{{ story.severity }}">{{ story.severity }}</span>
+        <h3 class="story-headline">{{ story.headline }}</h3>
+        <div class="story-summary">{{ story.summary }}</div>
+        {% if story.cves %}
+        <div class="cves">
+          {% for cve in story.cves %}
+          <span class="cve-tag">{{ cve }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if story.recommendations %}
+        <div class="recommendations">&#x2192; {{ story.recommendations }}</div>
+        {% endif %}
+        {% if story.sources %}
+        <div class="sources">
+          Sources:
+          {% for src in story.sources %}
+          <a href="{{ src }}" target="_blank">[{{ loop.index }}]</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    {% if newsletter.ioc_table %}
+    <div class="section">
+      <h2 class="section-title">Indicators of Compromise (IOCs)</h2>
+      <table class="ioc-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Value</th>
+            <th>Context</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ioc in newsletter.ioc_table %}
+          <tr>
+            <td>{{ ioc.type }}</td>
+            <td>{{ ioc.value }}</td>
+            <td>{{ ioc.context }}
+              {% if ioc.sources %}
+              {% for s in ioc.sources %}<a href="{{ s }}" style="color:#58a6ff">[src]</a>{% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="closing">{{ newsletter.closing }}</div>
+    <div class="footer">
+      Generated by Cyber News Agent &mdash; Devil Twins Pipeline<br>
+      This is an automated newsletter. Verify critical information independently.
+    </div>
+  </div>
+</body>
+</html>
