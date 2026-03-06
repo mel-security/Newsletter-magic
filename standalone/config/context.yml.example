@@ -1,0 +1,72 @@
+# ══════════════════════════════════════════════════════════
+# Newsletter Context — defines WHAT the agent searches for
+# ══════════════════════════════════════════════════════════
+# Copy this to context.yml and customize for your focus area.
+# This single file makes the agent multi-purpose.
+
+# ── Topic identity ───────────────────────────────────────
+topic: "Cybersecurity"
+tagline: "Weekly threat intelligence digest"
+lang: en                        # en, fr, etc.
+
+# ── LLM settings ─────────────────────────────────────────
+model: "mistral"                # Writer LLM (overridable with --llmwriter)
+reviewer_model: "deepseek-r1:7b"  # Reviewer LLM for feedback loop (--reviewer)
+temperature: 0.4
+ollama_url: "http://localhost:11434"
+
+# ── Search engines ───────────────────────────────────────
+engines:
+  - google_news
+  - bing
+results_per_query: 8
+
+# ── Search queries ───────────────────────────────────────
+# These drive what the agent looks for on the internet.
+# Change these to shift the entire newsletter focus.
+queries:
+  - "cybersecurity vulnerability exploit news"
+  - "ransomware attack today"
+  - "zero-day vulnerability CVE"
+  - "data breach notification"
+  - "APT threat actor campaign"
+  - "CISA advisory KEV"
+  - "malware analysis report"
+  - "phishing campaign"
+  - "critical infrastructure cyber attack"
+
+# ── Scoring keywords ─────────────────────────────────────
+# Higher-weight keywords make articles rank higher.
+# Customize for your domain.
+scoring_keywords:
+  critical:      # weight 5
+    - zero-day
+    - actively exploited
+    - ransomware
+    - supply chain attack
+    - data breach
+    - remote code execution
+  high:          # weight 3
+    - CVE-
+    - privilege escalation
+    - authentication bypass
+    - malware
+    - phishing
+    - botnet
+  medium:        # weight 1
+    - patch
+    - vulnerability
+    - security update
+    - threat intelligence
+
+# ── Newsletter structure ─────────────────────────────────
+max_articles: 50                # Max articles to process
+max_noteworthy: 8               # Items in "noteworthy" section
+headline_min_score: 30          # Minimum score for headline story
+
+# ── Output ───────────────────────────────────────────────
+output_dir: "./output"
+filename_pattern: "newsletter_{date}"   # {date} replaced with YYYY-MM-DD
+formats:
+  - html
+  # - markdown                  # Uncomment for .md output too
