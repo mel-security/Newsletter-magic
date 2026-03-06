@@ -313,6 +313,32 @@ nvidia-smi
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
 ```
 
+## Standalone / Portable Edition
+
+Want to run the newsletter agent **without Docker**? The `standalone/` folder contains a fully portable one-shot version that runs directly on your machine with just Python + Ollama.
+
+```bash
+cd standalone/
+
+# Install (pick your OS)
+./install-ubuntu.sh    # Ubuntu/Debian
+./install-mac.sh       # macOS
+# or: install-windows.bat  # Windows
+
+# Run
+source .venv/bin/activate
+python run.py
+python run.py --llmwriter mistral --reviewer deepseek-r1:7b
+```
+
+Features:
+- **No Docker, no database, no background services** — just install and run
+- **Dual-LLM architecture** — writer model + reviewer model with feedback loop
+- **Multi-purpose** — edit `config/context.yml` to generate newsletters about any topic
+- **Cross-platform** — Ubuntu, macOS, and Windows install scripts
+
+See [`standalone/README.md`](standalone/README.md) for full documentation, or [`standalone/HOWTO.md`](standalone/HOWTO.md) for a step-by-step guide.
+
 ## Upgrade
 
 ```bash
