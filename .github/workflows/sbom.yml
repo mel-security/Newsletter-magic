@@ -1,0 +1,102 @@
+name: Generate SBOM
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "app/pyproject.toml"
+      - ".github/workflows/sbom.yml"
+  pull_request:
+    paths:
+      - "app/pyproject.toml"
+      - ".github/workflows/sbom.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate CycloneDX SBOM from app/pyproject.toml
+        run: |
+          python <<'PY'
+          import json
+          import re
+          import tomllib
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          pyproject_path = Path("app/pyproject.toml")
+          data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+          project = data.get("project", {})
+          name = project.get("name", "application")
+          version = project.get("version", "0.0.0")
+          dependencies = project.get("dependencies", [])
+
+          def normalize(dep: str) -> tuple[str, str]:
+              raw = dep.split(";")[0].strip()
+              match = re.match(r"([A-Za-z0-9_.-]+)", raw)
+              pkg = match.group(1) if match else raw
+              return pkg.replace("_", "-"), raw
+
+          components = []
+          for dep in dependencies:
+              pkg, requirement = normalize(dep)
+              components.append(
+                  {
+                      "type": "library",
+                      "name": pkg,
+                      "bom-ref": f"pkg:pypi/{pkg.lower()}",
+                      "purl": f"pkg:pypi/{pkg.lower()}",
+                      "properties": [
+                          {
+                              "name": "python.requirement",
+                              "value": requirement,
+                          }
+                      ],
+                  }
+              )
+
+          sbom = {
+              "bomFormat": "CycloneDX",
+              "specVersion": "1.5",
+              "version": 1,
+              "metadata": {
+                  "timestamp": datetime.now(timezone.utc).isoformat(),
+                  "tools": [
+                      {
+                          "vendor": "OpenAI",
+                          "name": "custom-github-actions-sbom-generator",
+                          "version": "1.0.0",
+                      }
+                  ],
+                  "component": {
+                      "type": "application",
+                      "name": name,
+                      "version": version,
+                      "bom-ref": f"{name}@{version}",
+                  },
+              },
+              "components": components,
+          }
+
+          Path("sbom.cyclonedx.json").write_text(
+              json.dumps(sbom, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: sbom.cyclonedx.json
